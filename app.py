@@ -4,24 +4,23 @@ import discord
 import dotenv
 from notion import get_items_info
 
-# Set Token
+# Set Discord Token
 dotenv.load_dotenv()
 token = str(os.getenv("TOKEN"))
+
+# Set Channel id
+channel_id = int(os.getenv("CHANNEL_ID"))
 
 # Create Client
 bot = discord.Bot()
 
 
 '''
-    이용 가능 리스트 보여주기 버튼  / followup 삭제
-->  이용 가능한 리스트로 버튼이 등장 / disable 이용
-->  해당 버튼을 클릭하면 모달이 등장
-->  모달에 본인 정보를 제출
 ->  이용 신청 성공 // 신청자 디코 이름 같이 전송하기
 '''
 
-
-class RequestModal(discord.ui.Modal):
+# Modal when user clicks item button
+class ItemRequestModal(discord.ui.Modal):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -44,83 +43,46 @@ class RequestModal(discord.ui.Modal):
         await interaction.response.send_message(embeds=[embed])
 
 
-# class ItemBtns(discord.ui.View):
-
-#     for item in get_items_info():
-#         disabled = 'False' if item['status'] == '이용 가능' else 'True'
-#         emoji = ''
-#         if item['type'] == 'Book':
-#             emoji = '📕'
-#         elif item['type'] == 'Lecture':
-#             emoji = '👁‍🗨'
-#         elif item['type'] == 'Account':
-#             emoji = '🔑'
-
-#         @discord.ui.button(label=item['name'], style=discord.ButtonStyle.green, emoji=emoji, disabled=disabled)
-#         async def click_event(self, button, interaction):
-#             await interaction.response.send_modal(RequestModal(title=button.label))
-#         click_event.__name__ = f"click_event{item['id']}"
-
-    # @discord.ui.button(label="C로 배우는 암호학 프로그래밍", style=discord.ButtonStyle.green, emoji="📕", disabled=False)
-    # async def click_event1(self, button, interaction):
-    #     await interaction.response.send_modal(RequestModal(title="C로 배우는 암호학 프로그래밍"))
-
-    # @discord.ui.button(label="C로 배우는 암호학 프로그래밍", style=discord.ButtonStyle.green, emoji="📕", disabled=False)
-    # async def click_event2(self, button, interaction):
-    #     await interaction.response.send_modal(RequestModal(title="C로 배우는 암호학 프로그래밍"))
-
-    # @discord.ui.button(label="리버싱 핵심원리", style=discord.ButtonStyle.green, emoji="📕", disabled=False)
-    # async def click_event3(self, button, interaction):
-    #     await interaction.response.send_modal(RequestModal(title="리버싱 핵심원리"))
-
-    # @discord.ui.button(label="[인프런] 침투테스트 전문가", style=discord.ButtonStyle.green, emoji="🍂", disabled=False)
-    # async def click_event4(self, button, interaction):
-    #     await interaction.response.send_modal(RequestModal(title="[인프런] 침투테스트 전문가"))
-
-    # @discord.ui.button(label="Hack The Box VIP Account", style=discord.ButtonStyle.green, emoji="📦", disabled=False)
-    # async def click_event5(self, button, interaction):
-    #     await interaction.response.send_modal(RequestModal(title="Hack The Box VIP Account"))
-
-
+# Buttons for each item when user clicks 'Item Request' button at DM
 class ItemBtns(discord.ui.View):
-    async def create_button(self, item):
-        disabled = 'False' if item['status'] == '이용 가능' else 'True'
-        emoji = ''
-        if item['type'] == 'Book':
-            emoji = '📕'
-        elif item['type'] == 'Lecture':
-            emoji = '👁‍🗨'
-        elif item['type'] == 'Account':
-            emoji = '🔑'
-
-        async def click_event(button, interaction):
-            await interaction.response.send_modal(RequestModal(title=button.label))
-        click_event.__name__ = f"click_event_{item['id']}"
-
-        return discord.ui.Button(label=item['name'], style=discord.ButtonStyle.green, emoji=emoji, disabled=disabled, callback=click_event)
-
-    def __init__(self, items):
-        super().__init__()
-
+    def __init__(self, items, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         for item in items:
-            button = self.create_button(item)
+            disabled = 'False' if item['status'] == '이용 가능' else 'True'
+            emoji = ''
+            if item['type'] == 'Book':
+                emoji = '📕'
+            elif item['type'] == 'Lecture':
+                emoji = '👁‍🗨'
+            elif item['type'] == 'Account':
+                emoji = '🔑'
+
+            button = self.create_button(label=item['name'], emoji=emoji, disabled=disabled, id=item['id'])
             self.add_item(button)
 
+    def create_button(self, label, style=discord.ButtonStyle.green, emoji=None, disabled=False, id=None):
+        button = discord.ui.Button(label=label, style=style, emoji=emoji, disabled=disabled, custom_id=str(id) + ',' + label)
+        button.callback = self.callback
+        return button
 
+    async def callback(self, interaction):
+        button_label = interaction.data['custom_id'].split(',')[1]
+        await interaction.response.send_modal(ItemRequestModal(title=button_label))
+
+
+# Request Button at public channel
 class RequestBtn(discord.ui.View):
     @discord.ui.button(label="Item Request", style=discord.ButtonStyle.primary, emoji="📌")
     async def click_me(self, button, interaction):
         await interaction.user.send(view=ItemBtns(items=get_items_info()))
-        # await interaction.response.send_message(view=ItemBtns())
 
 
-@bot.slash_command()
-async def send_modal(ctx):
-    await ctx.respond(view=RequestBtn())
-
-
+# when the bot is ready and add the button to the channel
 @bot.event
 async def on_ready():
+    channel = bot.get_channel(1091273144075026514)
+    await channel.send(view=RequestBtn())
+
     print(f"{bot.user} is ready and online!")
 
 
