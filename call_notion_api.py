@@ -107,10 +107,16 @@ def request_item(item_id, item_type, user, item_name):
     response = requests.patch(url, json=payload, headers=headers)
     print(json.dumps(json.loads(response.text), indent=2, ensure_ascii=False))
 
+# 사용자가 이용 중인 item 목록 반환
 
-# Item 반납
-# def return_item(item_id, item_type, user, item_name):
 
-    # get_item_list()
-request_item(1, 'Book', '이승현', 'C로 배우는 암호학 프로그래밍')
+def get_user_item_list(user):
+
+    # Item 반납
+    # 사용자가 이용 중인 item 목록 반환
+    get_user_item_list(user)
+
+
+# get_item_list()
+# request_item(1, 'Book', '이승현', 'C로 배우는 암호학 프로그래밍')
 # get_page_id_by_id(4)
