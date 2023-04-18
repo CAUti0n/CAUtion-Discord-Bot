@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-
+# Period of item use
 periodOfUse = {
     "Book": ["1 week", 7],
     "Lecture": ["1 day", 1],
@@ -8,9 +8,12 @@ periodOfUse = {
 }
 
 
-def return_request_item_properties(id, type, user, item_name):
+# For request item
+def return_request_item_properties(id, item_type, item_name, user):
     start_date = datetime.now(timezone(timedelta(hours=9)))
-    end_date = start_date + timedelta(days=periodOfUse[type][1])
+    end_date = start_date + timedelta(days=periodOfUse[item_type][1])
+
+    print(id, item_type, item_name, user)
 
     request_item = {
         "Book": {
@@ -98,9 +101,11 @@ def return_request_item_properties(id, type, user, item_name):
             }
         },
     }
-    return request_item[type]
+
+    return request_item[item_type]
 
 
+# For add available item
 def return_available_item_properties(id, type, item_name):
     available_item = {
         "Book": {

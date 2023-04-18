@@ -42,14 +42,11 @@ def get_item_list():
         }
         items.append(item)
 
-    # 출력
-    print(json.dumps(json.loads(response.text), indent=2, ensure_ascii=False))
-
     return items
 
 
-# Get Page ID by ID
-def get_page_id_by_id(item_id):
+# Get Item info by ID
+def get_item_info_by_id(item_id):
     url = f'https://api.notion.com/v1/databases/{database_id}/query'
     headers = {
         "Authorization": f"Bearer {token}",
@@ -77,19 +74,27 @@ def get_page_id_by_id(item_id):
     }
 
     response = requests.post(url, json=payload, headers=headers)
-    objects = json.loads(response.text)['results']
-    page_id = objects[0]['id']
+    item = json.loads(response.text)
 
-    return page_id
+    if len(item['results']) > 1:
+        return 'Error'
 
-    # print(json.dumps(json.loads(response.text), indent=2, ensure_ascii=False))
+    item_info = []
+    item_info.append(item['results'][0]['id'])  # Page id
+    item_info.append(item['results'][0]['properties']['Type']['select']['name'].strip())    # Item Type
+    item_info.append(item['results'][0]['properties']['Name']['title'][0]['plain_text'].strip())    # Item Name
+
+    return item_info
 
 
 # Item 이용 신청
-def request_item(item_id, item_type, user, item_name):
+def request_item(item_id, user):
+
+    # Get Item info
+    item = get_item_info_by_id(item_id)
 
     # Call Notion API
-    url = f'https://api.notion.com/v1/pages/{get_page_id_by_id(item_id)}'
+    url = f'https://api.notion.com/v1/pages/{item[0]}'
     headers = {
         "Authorization": f"Bearer {token}",
         "accept": "application/json",
@@ -101,15 +106,14 @@ def request_item(item_id, item_type, user, item_name):
             "type": "database_id",
             "database_id": database_id
         },
-        "properties": return_request_item_properties(item_id, item_type, user, item_name)
+        "properties": return_request_item_properties(item_id, item[1], item[2], user)
     }
 
     response = requests.patch(url, json=payload, headers=headers)
-    print(json.dumps(json.loads(response.text), indent=2, ensure_ascii=False))
+
+
 
 # 사용자가 이용 중인 item 목록 반환
-
-
 def get_user_item_list(user):
 
     # Item 반납
@@ -118,5 +122,5 @@ def get_user_item_list(user):
 
 
 # get_item_list()
-# request_item(1, 'Book', '이승현', 'C로 배우는 암호학 프로그래밍')
-# get_page_id_by_id(4)
+# request_item(1, '이승현')
+

@@ -15,7 +15,6 @@ channel_id = int(os.getenv("CHANNEL_ID"))
 # Create Client
 bot = discord.Bot()
 
-
 # when the bot is ready and add the button to the channel
 @bot.event
 async def on_ready():
